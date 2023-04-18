@@ -42,7 +42,7 @@ namespace Chat
     private:
         std::vector<RoomPrxPtr> m_rooms;
         std::map<std::string, std::string> m_users;
-        std::map<std::string, std::string> m_loggedUsers;
+        std::map<UserPrxPtr, std::string> m_loggedUsers;
         std::vector<RoomFactoryPrxPtr> m_roomFactories;
     };
 

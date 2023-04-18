@@ -1,7 +1,7 @@
 #include <Ice/Ice.h>
 #include "ice/cpp/Chat2I.h"
 
-auto inputCredentials();
+auto inputCredentials() -> std::pair<std::string, std::string>;
 
 int main(int argc, char **argv)
 {
@@ -16,49 +16,88 @@ int main(int argc, char **argv)
             throw std::runtime_error("Invalid proxy");
         }
 
+        auto userAdapter = ich->createObjectAdapterWithEndpoints("User", "default -p 0");
+        userAdapter->activate();
+
+        auto credentials = inputCredentials();
+
+        auto servant = std::make_shared<Chat::UserI>(credentials.first, Chat::UserStatus::Online);
+        auto user = Ice::uncheckedCast<Chat::UserPrx>(userAdapter->addWithUUID(servant));
+
         std::cout << "l - login, r - register, other - exit" << std::endl;
 
         std::string option;
 
         std::cin >> option;
 
-        auto userAdapter = ich->createObjectAdapterWithEndpoints("User", "default -p 0");
-        userAdapter->activate();
+        std::string token;
 
         if (option == "l")
         {
-            auto credentials = inputCredentials();
-
-            auto servant = std::make_shared<Chat::UserI>(credentials.first, Chat::UserStatus::Online);
-            auto user = Ice::uncheckedCast<Chat::UserPrx>(userAdapter->addWithUUID(servant));
-
-            try
-            {
-                std::string result = lobby->login(user, credentials.second);
-            }
-            catch (Chat::AccessDenied e)
-            {
-                std::cout << "failed to log in" << std::endl;
-            }
+            goto login;
         }
         else if (option == "r")
         {
-            auto credentials = inputCredentials();
-
-            auto servant = std::make_shared<Chat::UserI>(credentials.first, Chat::UserStatus::Online);
-            auto user = Ice::uncheckedCast<Chat::UserPrx>(userAdapter->addWithUUID(servant));
-
             try
             {
                 lobby->_cpp_register(user, credentials.second);
+
+                std::cout << "registered\n";
             }
             catch (Chat::UserExists e)
             {
-                std::cout << "user exists" << std::endl;
+                std::cout << "user exists\n";
+            }
+
+        login:
+
+            try
+            {
+                token = lobby->login(user, credentials.second);
+
+                std::cout << "logged in\n";
+
+                while (true)
+                {
+                    std::cout << "commands\n";
+                    std::cout << "\tlogout\n";
+                    std::cout << "\tgetRooms\n";
+                    std::cout << "\tgetUsers\n";
+                    std::cout << "\tcreateRoom\n";
+                    std::cout << "\tfindRoom\n";
+                    std::cout << "\tquit\n";
+
+                    std::cin >> option;
+
+                    if (option == "logout")
+                    {
+                    }
+                    else if (option == "getRooms")
+                    {
+                    }
+                    else if (option == "getUsers")
+                    {
+                    }
+                    else if (option == "createRoom")
+                    {
+                    }
+                    else if (option == "findRoom")
+                    {
+                    }
+                    else if (option == "quit")
+                    {
+                        return 0;
+                    }
+                }
+            }
+            catch (Chat::AccessDenied e)
+            {
+                std::cout << "failed to log in\n";
             }
         }
         else
         {
+            return 0;
         }
     }
     catch (const std::exception &e)
@@ -71,13 +110,14 @@ int main(int argc, char **argv)
     return 0;
 }
 
-auto inputCredentials()
+auto inputCredentials() -> std::pair<std::string, std::string>
 {
     std::string login;
     std::string password;
 
     std::cout << "login: ";
     std::cin >> login;
+
     std::cout << "password: ";
     std::cin >> password;
 

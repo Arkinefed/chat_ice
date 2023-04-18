@@ -26,16 +26,19 @@ Chat::LobbyI::login(::std::shared_ptr<UserPrx> user,
 {
     if (m_users.find(user->getName()) != m_users.end())
     {
-        if (m_loggedUsers.find(user->getName()) != m_loggedUsers.end())
+        for (auto u : m_loggedUsers)
         {
-            throw AccessDenied();
+            if (u.first->getName() == user->getName())
+            {
+                throw AccessDenied();
+            }
         }
 
         if (m_users[user->getName()] == password)
         {
             std::string token = "logged";
 
-            m_loggedUsers.emplace(user->getName(), token);
+            m_loggedUsers.emplace(user, token);
 
             std::cout << "user logged: " << user->getName() << '\n';
 
@@ -76,8 +79,14 @@ Chat::LobbyI::getRooms(const Ice::Current &current)
 ::Chat::Users
 Chat::LobbyI::getUsers(const Ice::Current &current)
 {
-    return Users();
-    // return m_users;
+    Users users;
+
+    for (auto u : m_loggedUsers)
+    {
+        users.push_back(u.first);
+    }
+
+    return users;
 }
 
 ::std::shared_ptr<::Chat::RoomPrx>
