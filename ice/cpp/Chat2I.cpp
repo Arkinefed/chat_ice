@@ -1,6 +1,6 @@
 #include "Chat2I.h"
 
-#include <random>
+#include "../../utils.h"
 
 // LobbyI
 Chat::LobbyI::LobbyI()
@@ -44,7 +44,7 @@ Chat::LobbyI::login(::std::shared_ptr<UserPrx> user,
 
         if (m_users[user->getName()] == password)
         {
-            std::string token = generateToken();
+            std::string token = utils::generateToken();
 
             m_loggedUsers.emplace(user, token);
 
@@ -162,9 +162,15 @@ void Chat::LobbyI::registerRoomFactory(::std::shared_ptr<RoomFactoryPrx> roomFac
 {
     for (auto f : m_roomFactories)
     {
-        if (f == roomFactory)
+        try
         {
-            throw RoomFactoryExists();
+            if (f->getName() == roomFactory->getName())
+            {
+                throw RoomFactoryExists();
+            }
+        }
+        catch (std::exception e)
+        {
         }
     }
 
@@ -176,30 +182,21 @@ void Chat::LobbyI::unregisterRoomFactory(::std::shared_ptr<RoomFactoryPrx> roomF
 {
     for (auto it = m_roomFactories.begin(); it != m_roomFactories.end(); it++)
     {
-        if (*it == roomFactory)
+        try
         {
-            m_roomFactories.erase(it);
+            if (*it == roomFactory)
+            {
+                m_roomFactories.erase(it);
 
-            return;
+                return;
+            }
+        }
+        catch (std::exception e)
+        {
         }
     }
 
     throw NoSuchRoomFactory();
-}
-
-std::string Chat::LobbyI::generateToken()
-{
-    std::random_device engine;
-    std::uniform_int_distribution<int> distribution(0, 25);
-
-    std::string token;
-
-    for (int i = 0; i < 10; i++)
-    {
-        token += 'a' + distribution(engine);
-    }
-
-    return token;
 }
 
 // UserI

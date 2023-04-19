@@ -40,9 +40,6 @@ namespace Chat
                                            const Ice::Current &) override;
 
     private:
-        std::string generateToken();
-
-    private:
         std::vector<RoomPrxPtr> m_rooms;
         std::map<std::string, std::string> m_users;
         std::map<UserPrxPtr, std::string> m_loggedUsers;
