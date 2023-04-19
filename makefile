@@ -8,7 +8,7 @@ BIN_DIR = bin
 BIN_INT_DIR = bin-int
 
 SERVER_SRC = server.cpp $(ICE_CPP_DIR)/Chat2.cpp $(ICE_CPP_DIR)/Chat2I.cpp utils.cpp
-ROOMFACTORY_SRC = server.cpp $(ICE_CPP_DIR)/Chat2.cpp $(ICE_CPP_DIR)/Chat2I.cpp utils.cpp
+ROOMFACTORY_SRC = roomfactory.cpp $(ICE_CPP_DIR)/Chat2.cpp $(ICE_CPP_DIR)/Chat2I.cpp utils.cpp
 CLIENT_SRC = client.cpp $(ICE_CPP_DIR)/Chat2.cpp $(ICE_CPP_DIR)/Chat2I.cpp utils.cpp
 
 SERVER_OBJ = $(patsubst %.cpp,$(BIN_INT_DIR)/%.o,$(notdir $(SERVER_SRC)))
