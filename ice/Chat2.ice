@@ -54,5 +54,7 @@ module Chat {
       	double getServerLoad();
 	
       	Room* createRoom(string name) throws RoomExists;
+        
+        string getName();
     };
 };

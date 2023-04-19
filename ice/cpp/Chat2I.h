@@ -99,14 +99,17 @@ namespace Chat
     class RoomFactoryI : public virtual RoomFactory
     {
     public:
-        RoomFactoryI();
+        RoomFactoryI(std::string name);
 
         virtual double getServerLoad(const Ice::Current &) override;
 
         virtual ::std::shared_ptr<RoomPrx> createRoom(::std::string,
                                                       const Ice::Current &) override;
 
+        virtual ::std::string getName(const Ice::Current &) override;
+
     private:
+        std::string m_name;
         double m_serverLoad;
     };
 }

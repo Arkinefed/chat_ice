@@ -299,8 +299,8 @@ void Chat::RoomI::sendMessage(::std::shared_ptr<UserPrx> fromUser,
 }
 
 // RoomFactoryI
-Chat::RoomFactoryI::RoomFactoryI()
-    : m_serverLoad(0)
+Chat::RoomFactoryI::RoomFactoryI(std::string name)
+    : m_name(name), m_serverLoad(0)
 {
 }
 
@@ -317,4 +317,10 @@ Chat::RoomFactoryI::createRoom(::std::string name,
     // RoomExists
 
     return nullptr;
+}
+
+::std::string
+Chat::RoomFactoryI::getName(const Ice::Current &)
+{
+    return m_name;
 }
