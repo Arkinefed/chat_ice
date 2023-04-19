@@ -16,7 +16,7 @@ int main(int argc, char **argv)
             throw std::runtime_error("Invalid proxy");
         }
 
-        auto userAdapter = ich->createObjectAdapterWithEndpoints("User", "default -p 0");
+        auto userAdapter = ich->createObjectAdapterWithEndpoints("User", "default");
         userAdapter->activate();
 
         auto credentials = inputCredentials();
@@ -32,25 +32,10 @@ int main(int argc, char **argv)
 
         std::string token;
 
+        bool registered;
+
         if (option == "l")
         {
-            goto login;
-        }
-        else if (option == "r")
-        {
-            try
-            {
-                lobby->_cpp_register(user, credentials.second);
-
-                std::cout << "registered\n";
-            }
-            catch (Chat::UserExists e)
-            {
-                std::cout << "user exists\n";
-            }
-
-        login:
-
             try
             {
                 token = lobby->login(user, credentials.second);
@@ -65,12 +50,19 @@ int main(int argc, char **argv)
                     std::cout << "\tgetUsers\n";
                     std::cout << "\tcreateRoom\n";
                     std::cout << "\tfindRoom\n";
-                    std::cout << "\tquit\n";
 
                     std::cin >> option;
 
                     if (option == "logout")
                     {
+                        Ice::Context ctx;
+
+                        ctx.emplace("name", user->getName());
+                        ctx.emplace("token", token);
+
+                        lobby->logout(ctx);
+
+                        return 0;
                     }
                     else if (option == "getRooms")
                     {
@@ -84,15 +76,32 @@ int main(int argc, char **argv)
                     else if (option == "findRoom")
                     {
                     }
-                    else if (option == "quit")
-                    {
-                        return 0;
-                    }
                 }
             }
             catch (Chat::AccessDenied e)
             {
                 std::cout << "failed to log in\n";
+
+                return 1;
+            }
+        }
+        else if (option == "r")
+        {
+            registered = false;
+
+            try
+            {
+                lobby->_cpp_register(user, credentials.second);
+
+                std::cout << "registered\n";
+
+                registered = true;
+            }
+            catch (Chat::UserExists e)
+            {
+                std::cout << "user exists\n";
+
+                return 1;
             }
         }
         else

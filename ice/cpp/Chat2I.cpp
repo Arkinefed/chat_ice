@@ -1,5 +1,7 @@
 #include "Chat2I.h"
 
+#include <random>
+
 // LobbyI
 Chat::LobbyI::LobbyI()
 {
@@ -28,15 +30,21 @@ Chat::LobbyI::login(::std::shared_ptr<UserPrx> user,
     {
         for (auto u : m_loggedUsers)
         {
-            if (u.first->getName() == user->getName())
+            try
             {
-                throw AccessDenied();
+                if (u.first->getName() == user->getName())
+                {
+                    throw AccessDenied();
+                }
+            }
+            catch (std::exception e)
+            {
             }
         }
 
         if (m_users[user->getName()] == password)
         {
-            std::string token = "logged";
+            std::string token = generateToken();
 
             m_loggedUsers.emplace(user, token);
 
@@ -51,19 +59,40 @@ Chat::LobbyI::login(::std::shared_ptr<UserPrx> user,
 
 void Chat::LobbyI::logout(const Ice::Current &current)
 {
-    // auto userPrx = Ice::uncheckedCast<UserPrx>(current.adapter->createProxy(current.id));
+    std::string name;
+    std::string token;
 
-    // for (auto u : m_loggedUsers)
-    // {
-    //     if (u->getName() == userPrx->getName())
-    //     {
-    //         auto it = std::find(m_loggedUsers.begin(), m_loggedUsers.end(), u);
+    for (auto c : current.ctx)
+    {
+        if (c.first == "name")
+        {
+            name = c.second;
+        }
+        else if (c.first == "token")
+        {
+            token = c.second;
+        }
+    }
 
-    //         m_loggedUsers.erase(it);
+    for (auto u : m_loggedUsers)
+    {
+        try
+        {
+            if (u.first->getName() == name && token == u.second)
+            {
+                auto it = std::find(m_loggedUsers.begin(), m_loggedUsers.end(), u);
 
-    //         return;
-    //     }
-    // }
+                std::cout << "user logged out: " << u.first->getName() << '\n';
+
+                m_loggedUsers.erase(it);
+
+                return;
+            }
+        }
+        catch (std::exception e)
+        {
+        }
+    }
 
     throw AccessDenied();
 }
@@ -156,6 +185,21 @@ void Chat::LobbyI::unregisterRoomFactory(::std::shared_ptr<RoomFactoryPrx> roomF
     }
 
     throw NoSuchRoomFactory();
+}
+
+std::string Chat::LobbyI::generateToken()
+{
+    std::random_device engine;
+    std::uniform_int_distribution<int> distribution(0, 25);
+
+    std::string token;
+
+    for (int i = 0; i < 10; i++)
+    {
+        token += 'a' + distribution(engine);
+    }
+
+    return token;
 }
 
 // UserI
