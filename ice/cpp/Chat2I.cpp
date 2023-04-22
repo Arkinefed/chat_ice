@@ -175,6 +175,8 @@ void Chat::LobbyI::registerRoomFactory(::std::shared_ptr<RoomFactoryPrx> roomFac
     }
 
     m_roomFactories.push_back(roomFactory);
+
+    std::cout << "room factory " << roomFactory->getName() << " registered" << std::endl;
 }
 
 void Chat::LobbyI::unregisterRoomFactory(::std::shared_ptr<RoomFactoryPrx> roomFactory,
@@ -184,8 +186,10 @@ void Chat::LobbyI::unregisterRoomFactory(::std::shared_ptr<RoomFactoryPrx> roomF
     {
         try
         {
-            if (*it == roomFactory)
+            if (it->get()->getName() == roomFactory->getName())
             {
+                std::cout << "room factory " << it->get()->getName() << " unregistered" << std::endl;
+
                 m_roomFactories.erase(it);
 
                 return;
