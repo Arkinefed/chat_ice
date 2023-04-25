@@ -210,6 +210,10 @@ int main(int argc, char **argv)
                         {
                             std::cout << "room exists\n";
                         }
+                        catch (std::exception se)
+                        {
+                            std::cout << "server error\n";
+                        }
                     }
                     else if (option == "findRoom")
                     {
@@ -247,7 +251,9 @@ int main(int argc, char **argv)
                                 }
                                 else if (option == "getName")
                                 {
-                                    std::cout << "room name: " << room->getName(ctx) << std::endl;
+                                    std::string r = room->getName(ctx);
+
+                                    std::cout << "room name: " << r << std::endl;
                                 }
                                 else if (option == "getUsers")
                                 {
@@ -291,6 +297,10 @@ int main(int argc, char **argv)
                         catch (Chat::NoSuchRoom e)
                         {
                             std::cout << "access denied\n";
+                        }
+                        catch (std::exception se)
+                        {
+                            std::cout << "server error\n";
                         }
                     }
                 }

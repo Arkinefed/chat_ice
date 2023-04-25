@@ -176,18 +176,25 @@ Chat::LobbyI::createRoom(::std::string name,
         {
             if (u.first->getName() == username && token == u.second)
             {
+                bool found = false;
+
                 try
                 {
                     for (auto r : m_rooms)
                     {
                         if (r->getName() == name)
                         {
-                            throw RoomExists();
+                            found = true;
                         }
                     }
                 }
                 catch (std::exception e)
                 {
+                }
+
+                if (found)
+                {
+                    throw RoomExists();
                 }
 
                 if (m_roomFactories.size() < 1)
@@ -268,9 +275,15 @@ Chat::LobbyI::findRoom(::std::string name,
             {
                 for (auto r : m_rooms)
                 {
-                    if (name == r->getName())
+                    try
                     {
-                        return r;
+                        if (name == r->getName())
+                        {
+                            return r;
+                        }
+                    }
+                    catch (std::exception e)
+                    {
                     }
                 }
 
@@ -288,18 +301,25 @@ Chat::LobbyI::findRoom(::std::string name,
 void Chat::LobbyI::registerRoomFactory(::std::shared_ptr<RoomFactoryPrx> roomFactory,
                                        const Ice::Current &current)
 {
+    bool found = false;
+
     for (auto f : m_roomFactories)
     {
         try
         {
             if (f->getName() == roomFactory->getName())
             {
-                throw RoomFactoryExists();
+                found = true;
             }
         }
         catch (std::exception e)
         {
         }
+    }
+
+    if (found)
+    {
+        throw RoomFactoryExists();
     }
 
     m_roomFactories.push_back(roomFactory);
