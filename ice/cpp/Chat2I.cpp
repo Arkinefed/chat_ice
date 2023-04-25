@@ -100,9 +100,36 @@ void Chat::LobbyI::logout(const Ice::Current &current)
 ::Chat::Rooms
 Chat::LobbyI::getRooms(const Ice::Current &current)
 {
-    // AccessDenied
+    std::string name;
+    std::string token;
 
-    return m_rooms;
+    for (auto c : current.ctx)
+    {
+        if (c.first == "name")
+        {
+            name = c.second;
+        }
+        else if (c.first == "token")
+        {
+            token = c.second;
+        }
+    }
+
+    for (auto u : m_loggedUsers)
+    {
+        try
+        {
+            if (u.first->getName() == name && token == u.second)
+            {
+                return m_rooms;
+            }
+        }
+        catch (std::exception e)
+        {
+        }
+    }
+
+    throw AccessDenied();
 }
 
 ::Chat::Users
@@ -110,9 +137,15 @@ Chat::LobbyI::getUsers(const Ice::Current &current)
 {
     Users users;
 
-    for (auto u : m_loggedUsers)
+    try
     {
-        users.push_back(u.first);
+        for (auto u : m_loggedUsers)
+        {
+            users.push_back(u.first);
+        }
+    }
+    catch (std::exception e)
+    {
     }
 
     return users;
@@ -122,39 +155,134 @@ Chat::LobbyI::getUsers(const Ice::Current &current)
 Chat::LobbyI::createRoom(::std::string name,
                          const Ice::Current &current)
 {
-    // AccessDenied
+    std::string username;
+    std::string token;
 
-    for (auto r : m_rooms)
+    for (auto c : current.ctx)
     {
-        if (r->getName() == name)
+        if (c.first == "name")
         {
-            throw RoomExists();
+            username = c.second;
+        }
+        else if (c.first == "token")
+        {
+            token = c.second;
         }
     }
 
-    auto obj = current.adapter->addWithUUID(std::make_shared<RoomI>(name));
-    auto prx = Ice::uncheckedCast<RoomPrx>(obj);
+    for (auto u : m_loggedUsers)
+    {
+        try
+        {
+            if (u.first->getName() == username && token == u.second)
+            {
+                try
+                {
+                    for (auto r : m_rooms)
+                    {
+                        if (r->getName() == name)
+                        {
+                            throw RoomExists();
+                        }
+                    }
+                }
+                catch (std::exception e)
+                {
+                }
 
-    m_rooms.push_back(prx);
+                if (m_roomFactories.size() < 1)
+                {
+                    throw AccessDenied();
+                }
 
-    return prx;
+                RoomFactoryPrxPtr rf = nullptr;
+
+                for (auto f : m_roomFactories)
+                {
+                    try
+                    {
+                        double load = f->getServerLoad();
+
+                        if (rf == nullptr)
+                        {
+                            rf = f;
+                        }
+                        else
+                        {
+                            if (load < rf->getServerLoad())
+                            {
+                                rf = f;
+                            }
+                        }
+                    }
+                    catch (std::exception e)
+                    {
+                    }
+                }
+
+                try
+                {
+                    auto room = rf->createRoom(name);
+                    m_rooms.push_back(room);
+                    return room;
+                }
+                catch (std::exception e)
+                {
+                }
+
+                return nullptr;
+            }
+        }
+        catch (std::exception e)
+        {
+        }
+    }
+
+    throw AccessDenied();
 }
 
 ::std::shared_ptr<::Chat::RoomPrx>
 Chat::LobbyI::findRoom(::std::string name,
                        const Ice::Current &current)
 {
-    // AccessDenied
+    std::string username;
+    std::string token;
 
-    for (auto r : m_rooms)
+    for (auto c : current.ctx)
     {
-        if (name == r->getName())
+        if (c.first == "name")
         {
-            return r;
+            username = c.second;
+        }
+        else if (c.first == "token")
+        {
+            token = c.second;
         }
     }
 
-    throw NoSuchRoom();
+    for (auto u : m_loggedUsers)
+    {
+        try
+        {
+            if (u.first->getName() == username && token == u.second)
+            {
+                for (auto r : m_rooms)
+                {
+                    if (name == r->getName())
+                    {
+                        return r;
+                    }
+                }
+
+                throw NoSuchRoom();
+            }
+        }
+        catch (std::exception e)
+        {
+        }
+    }
+
+    throw AccessDenied();
 }
 
 void Chat::LobbyI::registerRoomFactory(::std::shared_ptr<RoomFactoryPrx> roomFactory,
@@ -225,7 +353,15 @@ void Chat::UserI::receivePrivateMessage(::std::shared_ptr<UserPrx> fromUser,
                                         ::std::string message,
                                         const Ice::Current &current)
 {
-    std::cout << "private message\n\t" << fromUser->getName() << ": " << message << '\n';
+    try
+    {
+        std::string u = fromUser->getName();
+
+        std::cout << "private message\n\t" << u << ": " << message << '\n';
+    }
+    catch (std::exception e)
+    {
+    }
 }
 
 void Chat::UserI::receiveMessage(::std::shared_ptr<RoomPrx> fromRoom,
@@ -233,7 +369,16 @@ void Chat::UserI::receiveMessage(::std::shared_ptr<RoomPrx> fromRoom,
                                  ::std::string message,
                                  const Ice::Current &current)
 {
-    std::cout << fromRoom->getName() << "\n\t" << fromUser->getName() << ": " << message << '\n';
+    try
+    {
+        std::string r = fromRoom->getName();
+        std::string u = fromUser->getName();
+
+        std::cout << r << "\n\t" << u << ": " << message << '\n';
+    }
+    catch (std::exception e)
+    {
+    }
 }
 
 // RoomI
@@ -259,9 +404,15 @@ void Chat::RoomI::join(::std::shared_ptr<UserPrx> user,
 {
     for (auto u : m_users)
     {
-        if (u->getName() == user->getName())
+        try
         {
-            return;
+            if (u->getName() == user->getName())
+            {
+                return;
+            }
+        }
+        catch (std::exception e)
+        {
         }
     }
 
@@ -271,15 +422,22 @@ void Chat::RoomI::join(::std::shared_ptr<UserPrx> user,
 void Chat::RoomI::leave(::std::shared_ptr<UserPrx> user,
                         const Ice::Current &current)
 {
+
     for (auto u : m_users)
     {
-        if (u->getName() == user->getName())
+        try
         {
-            auto it = std::find(m_users.begin(), m_users.end(), u);
+            if (u->getName() == user->getName())
+            {
+                auto it = std::find(m_users.begin(), m_users.end(), u);
 
-            m_users.erase(it);
+                m_users.erase(it);
 
-            return;
+                return;
+            }
+        }
+        catch (std::exception e)
+        {
         }
     }
 }
@@ -292,9 +450,15 @@ void Chat::RoomI::sendMessage(::std::shared_ptr<UserPrx> fromUser,
 
     for (auto u : m_users)
     {
-        if (u->getName() != fromUser->getName())
+        try
         {
-            u->receiveMessage(prx, fromUser, message, current.ctx);
+            if (u->getName() != fromUser->getName())
+            {
+                u->receiveMessageAsync(prx, fromUser, message, current.ctx);
+            }
+        }
+        catch (std::exception e)
+        {
         }
     }
 }
@@ -317,7 +481,17 @@ Chat::RoomFactoryI::createRoom(::std::string name,
 {
     // RoomExists
 
-    return nullptr;
+    auto servant = std::make_shared<Chat::RoomI>(name);
+    auto room = Ice::uncheckedCast<Chat::RoomPrx>(current.adapter->addWithUUID(servant));
+
+    if ((m_serverLoad += 1.0) >= 100.0)
+    {
+        m_serverLoad = 100.0;
+    }
+
+    std::cout << "room created: " << room->getName() << std::endl;
+
+    return room;
 }
 
 ::std::string

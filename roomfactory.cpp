@@ -32,7 +32,7 @@ int main(int argc, char **argv)
 
         while (true)
         {
-            std::cout << "input quit to exit ";
+            std::cout << "input quit to exit\n";
             std::cin >> name;
 
             if (name == "quit")
